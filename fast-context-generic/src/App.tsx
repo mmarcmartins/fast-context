@@ -1,25 +1,26 @@
-import createFastContext from "./createFastContext";
+import createFastContext from "./CreateFastContext";
 
-const { Provider, useStore } = createFastContext({
-  first: "",
-  last: "",
-});
+const {Provider,useStore} = createFastContext({
+  first: "john",
+  last: "Doe",
+})
 
 const TextInput = ({ value }: { value: "first" | "last" }) => {
-  const [fieldValue, setStore] = useStore((store) => store[value]);
+  const [fieldValue, setStore] = useStore((store) => store[value])!;
   return (
     <div className="field">
-      {value}:{" "}
-      <input
+      {value}: 
+      <input 
         value={fieldValue}
-        onChange={(e) => setStore({ [value]: e.target.value })}
-      />
+        onChange={(e) => {
+        setStore({[value]: e.target.value})
+      }}/>
     </div>
   );
 };
 
 const Display = ({ value }: { value: "first" | "last" }) => {
-  const [fieldValue] = useStore((store) => store[value]);
+  const [fieldValue] = useStore((store) => store[value])!;
   return (
     <div className="value">
       {value}: {fieldValue}
@@ -57,13 +58,13 @@ const ContentContainer = () => {
   );
 };
 
-function App() {
+function App() {  
   return (
     <Provider>
-      <div className="container">
-        <h5>App</h5>
-        <ContentContainer />
-      </div>
+    <div className="container">
+      <h5>App</h5>
+      <ContentContainer />
+    </div>
     </Provider>
   );
 }

@@ -1,26 +1,25 @@
 import React, { useState, createContext, useContext, memo } from "react";
 
-function useStoreData() {
+const useStoreData = () => {
   const store = useState({
     first: "",
-    last: "",
+    last: ""
   });
   return store;
 }
 
-type UseStoreDataReturnType = ReturnType<typeof useStoreData>;
-
-const StoreContext = createContext<UseStoreDataReturnType | null>(null);
+const StoreContext = createContext<ReturnType<typeof useStoreData> | null>(null);
 
 const TextInput = ({ value }: { value: "first" | "last" }) => {
   const [store, setStore] = useContext(StoreContext)!;
   return (
     <div className="field">
-      {value}:{" "}
-      <input
+      {value}: 
+      <input 
         value={store[value]}
-        onChange={(e) => setStore({ ...store, [value]: e.target.value })}
-      />
+        onChange={(e) => {
+        setStore({...store, [value]: e.target.value})
+      }}/>
     </div>
   );
 };
@@ -65,17 +64,13 @@ const ContentContainer = memo(() => {
 });
 
 function App() {
-  const store = useState({
-    first: "",
-    last: "",
-  });
-
+  const store = useStoreData();
   return (
     <StoreContext.Provider value={store}>
-      <div className="container">
-        <h5>App</h5>
-        <ContentContainer />
-      </div>
+    <div className="container">
+      <h5>App</h5>
+      <ContentContainer />
+    </div>
     </StoreContext.Provider>
   );
 }

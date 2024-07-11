@@ -1,86 +1,80 @@
-import React, {
-  useRef,
-  createContext,
-  useContext,
-  useCallback,
-  useSyncExternalStore,
-} from "react";
+import React, {useRef, createContext, useContext, useCallback, useEffect, useSyncExternalStore } from "react";
 
-type Store = { first: string; last: string };
+type Store = {first: string; last:string;};
 
-function useStoreData(): {
+const useStoreData = (): {
   get: () => Store;
   set: (value: Partial<Store>) => void;
-  subscribe: (callback: () => void) => () => void;
-} {
+  subscribe: (cb: () => void) => () => void;
+} => {
   const store = useRef({
     first: "",
-    last: "",
+    last: ""
   });
+  const subscribers = useRef(new Set< () => void >());
 
   const get = useCallback(() => store.current, []);
-
-  const subscribers = useRef(new Set<() => void>());
-
   const set = useCallback((value: Partial<Store>) => {
-    store.current = { ...store.current, ...value };
-    subscribers.current.forEach((callback) => callback());
+    store.current = {...store.current, ...value};
+    subscribers.current.forEach(cb => cb());
   }, []);
 
-  const subscribe = useCallback((callback: () => void) => {
-    subscribers.current.add(callback);
-    return () => subscribers.current.delete(callback);
+  const subscribe = useCallback((cb: () => void) => {
+    subscribers.current.add(cb);
+    return () => subscribers.current.delete(cb);
   }, []);
 
   return {
     get,
     set,
-    subscribe,
-  };
+    subscribe
+  }
 }
 
-type UseStoreDataReturnType = ReturnType<typeof useStoreData>;
+const StoreContext = createContext<ReturnType<typeof useStoreData> | null>(null);
 
-const StoreContext = createContext<UseStoreDataReturnType | null>(null);
-
-function Provider({ children }: { children: React.ReactNode }) {
+const StoreContextProvider = ({children}: {children: React.ReactNode}) => {
+  const store = useStoreData();
   return (
-    <StoreContext.Provider value={useStoreData()}>
+    <StoreContext.Provider value={store}>
       {children}
     </StoreContext.Provider>
-  );
+  )
 }
 
-function useStore<SelectorOutput>(
-  selector: (store: Store) => SelectorOutput
-): [SelectorOutput, (value: Partial<Store>) => void] {
-  const store = useContext(StoreContext);
-  if (!store) {
-    throw new Error("Store not found");
+const useStore = <SelectorOutput,>(
+  selector: (store: Store) => SelectorOutput,
+): [
+  SelectorOutput,
+  (value: Partial<Store>) => void,
+] => {
+  const store = useContext(StoreContext)!;
+  const state = useSyncExternalStore(store.subscribe, () => selector(store.get()));
+
+  if(!store){
+    throw new Error('Store not found');
   }
 
-  const state = useSyncExternalStore(store.subscribe, () =>
-    selector(store.get())
-  );
-
   return [state, store.set];
-}
+};
+
 
 const TextInput = ({ value }: { value: "first" | "last" }) => {
-  const [fieldValue, setStore] = useStore((store) => store[value]);
+  const [fieldValue, setStore] = useStore((store) => store[value])!;
   return (
     <div className="field">
-      {value}:{" "}
-      <input
+      {value}: 
+      <input 
         value={fieldValue}
-        onChange={(e) => setStore({ [value]: e.target.value })}
-      />
+        onChange={(e) => {
+        setStore({[value]: e.target.value})
+      }}/>
     </div>
   );
 };
 
 const Display = ({ value }: { value: "first" | "last" }) => {
-  const [fieldValue] = useStore((store) => store[value]);
+  const [fieldValue] = useStore((store) => store[value])!;
   return (
     <div className="value">
       {value}: {fieldValue}
@@ -118,14 +112,14 @@ const ContentContainer = () => {
   );
 };
 
-function App() {
+function App() {  
   return (
-    <Provider>
-      <div className="container">
-        <h5>App</h5>
-        <ContentContainer />
-      </div>
-    </Provider>
+    <StoreContextProvider>
+    <div className="container">
+      <h5>App</h5>
+      <ContentContainer />
+    </div>
+    </StoreContextProvider>
   );
 }
 
